@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+text {
+  font: bold 12px monospace;
+}
+
+p {
+  font: bold 12px monospace;
+}
+
+
+.rotating-line {
+  stroke: black;
+}
+
+.end-point {
+  fill: red;
+}
+
+</style>
+<body>
+<button>Pause</button>
+<p>Equation for line in standard form:  
+<p class="equation"></p>
+<p>Angle of line in degrees:  
+<p class="angle"></p>
+</body>
+<script src="d3.js"></script>
+<script>
+
+var rotations_per_min = 8;
+var center_x = center_y = 250;
+var line_len = 200;
+var last_time = null;
+var interval_ms = 100;
+var interval_id;
+var frames = 0;
+
+function line_for_theta(cx, cy, len, theta) {
+
+  x2 = (len/2) * Math.cos(theta);
+  y2 = (len/2) * Math.sin(theta);
+  return {'x1': center_x - x2, 
+          'y1': center_y + y2,
+          'x2': center_x + x2,
+          'y2': center_x - y2}; 
+
+}
+
+/* 
+ * If a line is defined by ax + by = 0
+ * what are the coefficients given a slope
+ */
+function a_b_for_slope(slope) { 
+
+  var a = b = 0; 
+  if (Math.abs(slope) > 0.000001) {
+    a = 1 / ((1 / -slope) + 1);
+    b = 1 - a;
+  }
+
+  return {'a': a, 'b': b};
+}
+  
+var width = 960,
+    height = 500;
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+  .append("g");
+
+function update(data) {
+
+  // DATA JOIN
+  // Join new data with old elements, if any.
+  var path = svg.selectAll("path")
+      .data(data);
+
+  // ENTER
+  // Create new elements as needed.
+  path.enter().append("path").classed("rotating-line", true);
+
+  // ENTER + UPDATE
+  // Appending to the enter selection expands the update selection to include
+  // entering elements; so, operations on the update selection after appending to
+  // the enter selection will apply to both entering and updating nodes.
+  path.attr("d", function(d) { return "M" + d['x1'] + " " + d['y1'] + " L " + d['x2'] + " " + d['y2']; });
+
+  // EXIT
+  // Remove old elements as needed.
+  path.exit().remove();
+}
+
+// The initial display.
+update([line_for_theta(center_x, center_y, line_len, 0)]);
+
+function round10(num, exp) { 
+  return Math.round(num * Math.pow(10, exp)) / Math.pow(10, exp);
+}
+
+function animate() {
+  // rotate the line rotations_per_min * (cumulative_time / minute) from 0
+  interval_id = setInterval(function() {
+    var m_seconds = frames * interval_ms;
+    var rotation_ratio = ((m_seconds * rotations_per_min) % 60000) / 60000;
+    var theta = rotation_ratio * 2 * Math.PI;
+    update([line_for_theta(center_x, center_y, line_len, theta)]);
+    frames += 1;
+    d3.select("p.angle").html(round10(theta * (360 / (2*Math.PI)), 2));
+    var a_b = a_b_for_slope(Math.tan(theta));
+    d3.select("p.equation").html(round10(a_b['a'], 2) + "x + " + round10(a_b['b'], 2) + "y = 0");
+    
+  }, interval_ms);
+}
+animate();
+
+d3.select('button').on('click', function(d) {
+  var self = d3.select(this);
+  if (self.text() == "Pause") { 
+    self.text('Play');
+    clearInterval(interval_id);
+  } else {
+    self.text('Pause');
+    animate();
+  }});
+
+</script>
