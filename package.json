@@ -1,0 +1,27 @@
+{
+  "name": "math-visuals",
+  "version": "0.0.1",
+  "description": "basic math visuals",
+  "main": "none",
+  "dependencies": {
+    "algebra.js": "^0.2.3",
+    "d3": "^3.5.6"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "none"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrisnatali/math-visuals.git"
+  },
+  "keywords": [
+    "none"
+  ],
+  "author": "chris natali",
+  "license": "WTFPL",
+  "bugs": {
+    "url": "https://github.com/chrisnatali/math-visuals/issues"
+  },
+  "homepage": "https://github.com/chrisnatali/math-visuals#README.md"
+}
