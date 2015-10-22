@@ -2,12 +2,8 @@
 <meta charset="utf-8">
 <style>
 
-text {
-  font: bold 12px monospace;
-}
-
 p {
-  font: bold 12px monospace;
+  font: bold 16px sans-serif;
 }
 
 input.error {
@@ -32,15 +28,21 @@ input.error {
 }
 </style>
 <body>
-<p>Graph an single variable function</p>
-<input type="text" id="expr" placeholder="f(x) = 2*x - 3" />
+<p>Graph a single variable function</p>
+Functions are defined in <a href="http://mathjs.org/docs/expressions/syntax.html">mathjs</a> syntax
+<table>
+<tr>
+<td><input type="text" id="expr" value="f(x) = 2*x - 3" /></td><td><div id="pretty">$$$$</div></td>
+</tr>
+</table>
 <br/>
 </body>
 <script src="node_modules/d3/d3.js"></script>
 <script src="node_modules/mathjs/dist/math.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/mathjax/2.3/MathJax.js?config=TeX-AMS-MML_HTMLorMML.js"></script>
 <script>
 var default_domain = [-10, 10];
-var default_domain_density = 0.02;
+var default_domain_density = 0.10;
 
 var margin = {top: 20, right: 20, bottom: 30, left: 50},
     width = 960 - margin.left - margin.right,
@@ -70,16 +72,21 @@ function getExprAndDrawGraph() {
     try {
         var funStr = d3.select("#expr").property("value");
         var graphFun = math.parser().eval(funStr);
-        var funWrap = function(x) { 
-            var yVal = graphFun(x);
-            if(yVal == Infinity || yVal == -Infinity) { 
-                return 0; 
-            } else { 
-                return yVal; 
-            }
-        }
         d3.select("#expr").classed("error", false);
-        drawGraph(funWrap);
+        drawGraph(graphFun);
+        // do latex/mathjax conversion
+        var funNode = math.parse(funStr);
+        var latex = funNode ? funNode.toTex({parenthesis: 'keep'}) : '';
+        if(MathJax.isReady) {
+            var latex_elem = MathJax.Hub.getAllJax('pretty')[0];
+            MathJax.Hub.Queue(['Text', latex_elem, latex]);
+        }
+        else {
+            // in case mathjax hasn't fully loaded
+            // mathjax seems to format latex once its loaded
+            // when wrapped in $$
+            d3.select('#pretty').html('$$' + latex + '$$');
+        }
     }
     catch (ex) {
         d3.select("#expr").classed("error", true);
@@ -93,6 +100,15 @@ d3.select("#expr").on("input", function() {
 function drawGraph(graphFun) {
 
     var data = d3.range(default_domain[0], default_domain[1]+1, default_domain_density);
+    // filter domain
+    data = data.filter(function(x) {
+        var n = graphFun(x);
+        return typeof n == 'number' && !isNaN(n - n); 
+    });
+    // get out if there are no good values
+    if (data.length == 0) {
+        return;
+    }
     x_extent = d3.extent(data);
     y_extent = d3.extent(data, function(d) { return graphFun(d); });
     x.domain(x_extent);
@@ -136,5 +152,6 @@ function drawGraph(graphFun) {
         .attr("d", "M " + x(x_extent[0]) + " " + y(0) + " L " + x(x_extent[1]) + " " + y(0));
 
 }
-getExprAndDrawGraph();
+
+window.onload = getExprAndDrawGraph;
 </script>
